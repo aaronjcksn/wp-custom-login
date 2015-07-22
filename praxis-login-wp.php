@@ -21,6 +21,7 @@ class Praxis_Login_WP {
 
     public function __construct() {
         add_shortcode( 'praxis-login-form', array( $this, 'render_login_form' ) );
+        add_action( 'login_form_login', array( $this, 'redirect_to_custom_login' ) );
 
     }
 
@@ -113,9 +114,37 @@ class Praxis_Login_WP {
          do_action( 'praxis_login_after_' . $template_name );
 
          $html = ob_get_contents();
-         $ob_end_clean();
+         ob_end_clean();
 
          return $html;
+     }
+
+     // Redirect
+
+     /**
+     *
+     * Redirects the user to the custom login page instead of wp-login
+     *
+     */
+
+     function redirect_to_custom_login() {
+         if ( $_SERVER['REQUEST_METHOD'] == 'GET' ) {
+             $redirect_to = isset( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : null;
+
+             if ( is_user_logged_in() ) {
+                 $this->redirect_logged_in_user( $redirect_to );
+                 exit;
+             }
+
+             // Everything else is redirected to the login page
+             $login_url = home_url( 'member-login' );
+             if ( ! empty( $redirect_to ) ) {
+                 $login_url = add_query_arg( 'redirect_to', $redirect_to, $login_url );
+             }
+
+             wp_redirect( $login_url );
+             exit;
+         }
      }
 }
 
