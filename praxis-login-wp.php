@@ -1,16 +1,16 @@
 <?php
 /**
 *
-* Plugin Name:      Custom Login WP
+* Plugin Name:      Praxis WP
 * Description:      A simple and minamal plugin that replaces the WordPress Login
 * Version:          1.0.0
 * Author:           Aaron Jackson
 * License:          GPL-2.0+
-* Text Domain:      custom-login-wp
+* Text Domain:      praxis-wp
 *
 */
 
-class Custom_Login_WP {
+class Praxis_Login_WP {
 
     /**
     * Initializes the plugin
@@ -59,7 +59,7 @@ class Custom_Login_WP {
 }
 
 // Init the plugin
-$personalize_login_pages_plugin = new Custom_Login_WP();
+$personalize_login_pages_plugin = new Praxis_Login_WP();
 
 // Create the custom pages at plugin activation
-register_activation_hook(__FILE__, array('Custom_Login_WP', 'plugin_activated' ) );
+register_activation_hook(__FILE__, array('Praxis_Login_WP', 'plugin_activated' ) );
