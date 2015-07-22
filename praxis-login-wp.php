@@ -20,6 +20,7 @@ class Praxis_Login_WP {
     */
 
     public function __construct() {
+        add_shortcode( 'praxis-login-form', array( $this, 'render_login_form' ) );
 
     }
 
@@ -28,11 +29,11 @@ class Praxis_Login_WP {
         // These are the pages that are created once the plugin is activated
         $page_definitions = array(
             'member-login' => array(
-                'title' => __( 'Sign In', 'custom-login' ),
-                'content' => '[custom-login-form]'
+                'title' => __( 'Sign In', 'praxis-login' ),
+                'content' => '[praxis-login-form]'
             ),
             'member-account' => array(
-                'title' => __( 'Your Account', 'custom-login' ),
+                'title' => __( 'Your Account', 'praxis-login' ),
                 'content' => '[account-info]'
             ),
         );
@@ -56,6 +57,66 @@ class Praxis_Login_WP {
             }
         }
     }
+
+    // Form Rendering Shortcodes
+
+    /**
+    *
+    * A shortcode for rendering the login form.
+    *
+    * @param array $attribute Shortcode attributes.
+    * @param string $content The text content for shortcode.
+    *
+    * @return string The shortcode output
+    */
+
+    public function render_login_form( $attributes, $content = null ) {
+        // Parse shortcode attributes
+        $default_attributes = array( 'show_title' => false );
+        $attributes = shortcode_atts( $default_attributes, $attributes );
+        $show_title = $attributes['show_title'];
+
+        if (is_user_logged_in() ) {
+            return __( 'You are already signed in.', 'praxis-login');
+        }
+
+        // Pass the redirect parameter to the WordPress login functionality: by default,
+        // don't specify a redirect, but if a valid redirect URL has been passed as
+        // request parameter, use it.
+        $attributes['redirect'] = '';
+        if ( isset($_REQUEST['redirect_to'] ) ) {
+            $attributes['redirect'] = wp_validate_redirect( $_REQUEST['redirect_to'], $attributes['redirect'] );
+        }
+
+        // Render the login form using an external template
+        return $this->get_template_html( 'login_form', $attributes );
+    }
+
+    /**
+    * Renders the contents of the given template to a string and returns it.
+     *
+     * @param string $template_name The name of the template to render (without .php)
+     * @param array  $attributes    The PHP variables for the template
+     *
+     * @return string               The contents of the template.
+     */
+
+     private function get_template_html( $template_name, $attributes = null ) {
+         if ( ! $attributes ) {
+             $attributes = array();
+         }
+
+         ob_start();
+
+         do_action( 'praxis_login_before_' . $template_name );
+         require( 'templates/' . $template_name . '.php');
+         do_action( 'praxis_login_after_' . $template_name );
+
+         $html = ob_get_contents();
+         $ob_end_clean();
+
+         return $html;
+     }
 }
 
 // Init the plugin
