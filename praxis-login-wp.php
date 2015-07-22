@@ -22,6 +22,9 @@ class Praxis_Login_WP {
     public function __construct() {
         add_shortcode( 'praxis-login-form', array( $this, 'render_login_form' ) );
         add_action( 'login_form_login', array( $this, 'redirect_to_custom_login' ) );
+        add_filter( 'login_redirect', array( $this, 'redirect_after_login' ), 10, 3 );
+        add_filter( 'authenticate', array( $this, 'maybe_redirect_at_authenticate' ), 105, 3 );
+
 
     }
 
@@ -89,6 +92,18 @@ class Praxis_Login_WP {
             $attributes['redirect'] = wp_validate_redirect( $_REQUEST['redirect_to'], $attributes['redirect'] );
         }
 
+        // Errors
+        
+        $errors = array();
+        if ( isset( $_REQUEST['login'] ) ) {
+            $error_codes = explode( ',', $_REQUEST['login'] );
+
+            foreach ( $error_codes as $code ) {
+                $errors []= $this->get_error_message( $code );
+            }
+        }
+        $attributes['errors'] = $errors;
+
         // Render the login form using an external template
         return $this->get_template_html( 'login_form', $attributes );
     }
@@ -146,6 +161,82 @@ class Praxis_Login_WP {
              exit;
          }
      }
+
+     /**
+     *
+     * Redirects the user after successful login
+     *
+     */
+
+     public function redirect_after_login( $redirect_to, $requested_redirect_to, $user ) {
+         $redirect_url = home_url();
+
+         if ( ! isset( $user-> ID ) ) {
+             return $redirect_url;
+         }
+
+         if ( user_can( $user, 'manage_options' ) ) {
+             // Use the redirect_to parameter if one is set, otherwise redirect to admin dashboard.
+             if ( $requested_redirect_to == '' ) {
+                 $redirect_url = admin_url();
+             } else {
+                 $redirect_url = $requested_redirect_to;
+             }
+         } else {
+             // Non-admin users always go to their account page after login
+             $redirect_url = home_url ( 'member-account' );
+         }
+
+         return wp_validate_redirect( $redirect_url, home_url() );
+     }
+
+    // Error Messages
+
+    /**
+    *
+    * Redirect the user after authentication if there were any errors.
+    *
+    */
+
+    function maybe_redirect_at_authenticate( $user, $username, $password ) {
+        if ( $_SERVER['REQUEST_METHOD'] === 'POST') {
+            if ( is_wp_error( $user ) ) {
+                $error_codes = join(',', $user->get_error_codes() );
+
+                $login_url = home_url( 'member-login' );
+                $login_url = add_query_arg( 'login', $error_codes, $login_url );
+
+                wp_redirect( $login_url );
+                exit;
+            }
+        }
+
+        return $user;
+    }
+
+    private function get_error_message( $error_code ) {
+        switch ( $error_code ) {
+            case 'empty_username':
+                return __( 'You have an email address, correct?', 'praxis-login');
+                break;
+            case 'empty_password':
+                return __( 'You need to enter a password to login.', 'praxis-login');
+                break;
+            case 'invalid_username':
+                return __( 'Sorry, none of our users have that email address.', 'praxis-login');
+                break;
+            case 'incorrect_password':
+                $err = __( "The password you entered is in correct. <a href='%s'>Did you forget your password</a>?", 'praxis-login' );
+                return sprintf( $err, wp_lostpassword_url() );
+                break;
+            default:
+                break;
+        }
+
+        return __( 'An unknown error occurred. Please try again later.', 'praxis-login' );
+    }
+
+
 }
 
 // Init the plugin

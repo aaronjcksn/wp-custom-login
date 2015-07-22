@@ -3,15 +3,19 @@
         <h2><?php _e( 'Sign In', 'praxis-login'); ?></h2>
     <?php endif; ?>
 
-    <?php
-        wp_login_form(
-            array (
-                'label_username' => __( 'Email', 'praxis-login' ),
-                'label_log_in' => __( 'Sign In', 'praxis-login' ),
-                'redirect' => $attributes['redirect'],
-            )
-        );
-     ?>
+    <form method="post" action="<?php echo wp_login_url(); ?>">
+        <p class="login-username">
+            <label for="user_login"><?php _e( 'Username', 'praxis-login' ); ?></label>
+            <input type="text" name="log" id="user_login">
+        </p>
+        <p class="login-password">
+            <label for="user_pass"><?php _e( 'Password', 'praxis-login' ); ?></label>
+            <input type="password" name="pwd" id="user_pass">
+        </p>
+        <p class="login-submit">
+            <input type="submit" value="<?php _e( 'Sign In', 'praxis-login' ); ?>">
+        </p>
+    </form>
 
      <a href="<?php echo wp_lostpassword_url(); ?>" class="forgot-password">
          <?php _e( 'Forgot your password? ', 'praxis-login' ); ?>
