@@ -24,6 +24,7 @@ class Praxis_Login_WP {
         add_action( 'login_form_login', array( $this, 'redirect_to_custom_login' ) );
         add_filter( 'login_redirect', array( $this, 'redirect_after_login' ), 10, 3 );
         add_filter( 'authenticate', array( $this, 'maybe_redirect_at_authenticate' ), 105, 3 );
+        add_shortcode( 'praxis-register-form', array( $this, 'render_register_form' ) );
 
 
     }
@@ -39,6 +40,10 @@ class Praxis_Login_WP {
             'member-account' => array(
                 'title' => __( 'Your Account', 'praxis-login' ),
                 'content' => '[account-info]'
+            ),
+            'member-register' => array(
+                'title' => __( 'Register', 'praxis-login' ),
+                'content'   => '[praxis-register-form]'
             ),
         );
 
@@ -93,7 +98,7 @@ class Praxis_Login_WP {
         }
 
         // Errors
-        
+
         $errors = array();
         if ( isset( $_REQUEST['login'] ) ) {
             $error_codes = explode( ',', $_REQUEST['login'] );
@@ -234,6 +239,28 @@ class Praxis_Login_WP {
         }
 
         return __( 'An unknown error occurred. Please try again later.', 'praxis-login' );
+    }
+
+    // Registration Form
+
+    /**
+    *
+    * A shortcode for rendering the new user registration form.
+    *
+    */
+
+    public function render_register_form( $attributes, $content = null ) {
+        // Parse shortcode attributes
+        $default_attributes = array ( 'show_title' => false );
+        $attributes = shortcode_atts( $default_attributes, $attributes );
+
+        if ( is_user_logged_in() ) {
+            return __( 'You are already signed in.', 'praxis-login' );
+        } elseif ( ! get_option( 'users_can_register' ) ) {
+            return __( 'Registering new users is currently not allowed.', 'praxis-login' );
+        } else {
+            return $this->get_template_html( 'register_form', $attributes );
+        }
     }
 
 
