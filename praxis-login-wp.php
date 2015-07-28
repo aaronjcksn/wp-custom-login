@@ -25,6 +25,7 @@ class Praxis_Login_WP {
         add_filter( 'login_redirect', array( $this, 'redirect_after_login' ), 10, 3 );
         add_filter( 'authenticate', array( $this, 'maybe_redirect_at_authenticate' ), 105, 3 );
         add_shortcode( 'praxis-register-form', array( $this, 'render_register_form' ) );
+        add_action( 'login_form_register', array( $this, 'redirect_to_custom_register' ) );
 
 
     }
@@ -263,6 +264,62 @@ class Praxis_Login_WP {
         }
     }
 
+    /**
+    *
+    * Redirect users to the custom registration page
+    *
+    */
+
+    public function redirect_to_custom_register() {
+        if ( 'GET' == $_SERVER['REQUEST_METHOD'] ) {
+            if ( is_user_logged_in() ) {
+                $this->redirect_logged_in_user();
+            } else {
+                wp_redirect ( home_url('member-register') );
+            }
+            exit;
+        }
+    }
+
+    // Form Vaildation
+
+    /**
+    *
+    * Vaildates and completes the new user signup process
+    *
+    */
+
+    private function register_user( $email, $first_name, $last_name ) {
+        $errors = new WP_Error();
+
+        // Email address is used as both username and email.
+        if ( ! is_email($email ) ) {
+            $errors->add( 'email', $this->get_error_message( 'email' ) );
+            return $errors;
+        }
+
+        if ( username_exists( $email ) || email_exists( $email ) ) {
+            $errors->add( 'email_exists', $this->get_error_message( 'email_exists' ) );
+            return $errors;
+        }
+
+        // Generate password to force subscriber to check email
+        $password = wp_generate_password( 12, false );
+
+        $user_data = array(
+            'user_login'    => $email,
+            'user_email'    => $email,
+            'user_pass'     => $password,
+            'first_name'    => $first_name,
+            'last_name'     => $last_name,
+            'nickname'      => $first_name,
+        );
+
+        $user_id = wp_insert_user( $user_data );
+        wp_new_user_notification( $user_id, $password );
+
+        return $user_id;
+    }
 
 }
 
