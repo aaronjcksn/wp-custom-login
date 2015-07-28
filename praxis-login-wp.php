@@ -26,6 +26,7 @@ class Praxis_Login_WP {
         add_filter( 'authenticate', array( $this, 'maybe_redirect_at_authenticate' ), 105, 3 );
         add_shortcode( 'praxis-register-form', array( $this, 'render_register_form' ) );
         add_action( 'login_form_register', array( $this, 'redirect_to_custom_register' ) );
+        add_action( 'login_form_register', array( $this, 'do_register_user') );
 
 
     }
@@ -319,6 +320,36 @@ class Praxis_Login_WP {
         wp_new_user_notification( $user_id, $password );
 
         return $user_id;
+    }
+
+    public function do_register_user() {
+        if ( 'POST' == $_SERVER['REQUEST_METHOD'] ) {
+            $redirect_url = home_url( 'member-register' );
+
+            if ( ! get_option( 'users_can_register') ) {
+                // Registration closed, display error
+                $redirect_url = add_query_arg( 'register-errors', 'closed', $redirect_url );
+            } else {
+                $email = $_POST['email'];
+                $first_name = sanitize_text_field( $_POST['first_name'] );
+                $last_name = sanitize_text_field( $_POST['last_name'] );
+
+                $result = $this->register_user( $email, $first_name, $last_name );
+
+                if ( is_wp_error( $result ) ) {
+                    // Parse errors into a string and append as parameter to redirect
+                    $errors = join( ',', $result->get_error_codes() );
+                    $redirect_url = add_query_arg( 'register-errors', $errors, $redirect_url );
+                } else {
+                    // Success, redirect to login.
+                    $redirect_url = home_url( 'memeber-login' );
+                    $redirect_url = add_query_arg( 'registered', $email, $redirect_url );
+                }
+            }
+
+            wp_redirect( $redirect_url );
+            exit;
+        }
     }
 
 }
